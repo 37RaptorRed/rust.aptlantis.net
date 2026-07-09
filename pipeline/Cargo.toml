@@ -1,0 +1,9 @@
+[package]
+name = "rust-aptlantis-pipeline"
+version = "0.0.1"
+edition = "2021"
+description = "Staged sync/archival pipeline for rust.aptlantis.net (see ../PROJECT.md)."
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }

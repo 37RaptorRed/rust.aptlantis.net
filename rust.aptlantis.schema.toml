@@ -1,0 +1,85 @@
+[manifest]
+schema = "APTlantis Entity Manifest"
+schema_version = "2.4"
+manifest_type = "project"
+canonical_name = "rust.aptlantis.schema.toml"
+last_updated = "2026-07-09"
+maintainer = "Herb"
+
+[entity]
+id = "rust-aptlantis-net"
+title = "rust.aptlantis.net"
+kind = "project"
+class = "mirror"
+status = "concept"
+description = "Archival + analytics platform built on a static, self-hosted mirror of the crates.io registry (all crates/versions, including yanked), synced within ~12h via an immutable, timestamped snapshot pipeline. The mirror is raw material; the products are the analytics, the signed archival snapshots (per AAMHS), torrent distributions, and periodic research-dataset releases. Part of the APTlantis mirror family."
+tags = ["mirror", "rust", "crates.io", "astro", "static-site", "torrent", "analytics", "archival", "observatory", "research-dataset"]
+
+[project]
+type = "mirror"
+stage = "concept"
+version = "0.0.0"
+
+[governance]
+primary_standard = "PPS"
+release_standard = ""
+additional_standards = ["AAMHS"]
+proposal_required = true
+
+[lifecycle]
+state = "concept"
+created = "2026-06-10"
+last_updated = "2026-07-09"
+maintainer = "Herb"
+completion_percent = 8
+
+[paths]
+root = "D:\\WDS\\DotNet"
+docs = "docs"
+source = "pipeline"
+artifacts = ""
+data = ""
+
+[documentation]
+readme = "README.md"
+proposal = "PROJECT.md"
+roadmap = ""
+architecture = ""
+release_notes = ""
+
+[runtime]
+platform = "docker"
+language_primary = "rust"
+languages_used = ["rust", "go", "typescript"]
+services = ["clonecratesio", "rust-pipeline", "archivehasher", "astro-site", "torrent-packager"]
+storage = ["local-filesystem"]
+
+[relationships]
+depends_on_projects = [
+  "D:\\CTS\\CloneCratesio",
+  "D:\\CTS\\ArchiveHasher",
+]
+used_by_projects = []
+related_projects = []
+external_dependencies = ["crates.io index (git)", "static.crates.io (CDN)"]
+
+[state]
+stability = "experimental"
+active_development = true
+known_gaps = [
+  "Pipeline skeleton exists (pipeline/, crate rust-aptlantis-pipeline) with all 9 stages stubbed and wired in order, builds and runs clean -- but no stage has real logic yet. CloneCratesio and ArchiveHasher are proven/existing externally but not yet invoked from any stage.",
+  "Torrent distribution granularity not decided; whether RustSec-style vulnerability data is wanted alongside ArchiveHasher's integrity manifest not decided (see PROJECT.md §10).",
+  "Torrent seeding/hosting strategy not decided.",
+  "Storage backend for the raw mirror at 2.5M-record scale not decided.",
+  "Immutable snapshot retention/pruning policy not decided (see PROJECT.md §4 and §10).",
+  "Research-dataset release cadence and exact bundle contents not decided (see PROJECT.md §8).",
+  "Mirror Health scoring rubric not decided (see PROJECT.md §9).",
+  "This file itself (rust.aptlantis.schema.toml) currently just mirrors the generic Aptlantis manifest fields under a project-specific name; whether it should also define the crate dataset schema is still undecided.",
+]
+technical_debt = "none (pre-implementation)"
+
+[agent]
+read_first = ["rust.aptlantis.schema.toml", "README.md", "PROJECT.md"]
+governing_context = "Read the AAMHS standard (D:\\.library\\aptlantis_core\\AAMHS) before touching archival hashing/signing behavior; read the PPS standard before broad changes."
+safe_to_modify = false
+notes = "This file replaces the usual Aptlantis.manifest.toml for this project (renamed 2026-07-09). Design proposal complete as of 2026-07-09 (see PROJECT.md). A pipeline skeleton exists under pipeline/ (stub stages only, no real logic) — do not assume any stage actually clones, hashes, or publishes yet."
