@@ -1,5 +1,5 @@
 [package]
-name = "rust-aptlantis-pipeline"
+name = "pipeline"
 version = "0.0.1"
 edition = "2021"
 description = "Staged sync/archival pipeline for rust.aptlantis.net (see ../PROJECT.md)."
