@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/DotNet.iml" filepath="$PROJECT_DIR$/.idea/DotNet.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/rust.aptlantis.net.iml" filepath="$PROJECT_DIR$/.idea/rust.aptlantis.net.iml" />
     </modules>
   </component>
 </project>
