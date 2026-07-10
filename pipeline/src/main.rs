@@ -6,19 +6,28 @@ mod stages;
 
 use context::PipelineContext;
 use report::{BuildReport, StageStatus};
+use std::env;
 use std::path::PathBuf;
 use std::time::Instant;
 
 fn main() -> anyhow::Result<()> {
     if !scheduler::should_run_now() {
-        println!("Not due for a sync yet (target freshness: {}h).", scheduler::FRESHNESS_TARGET_HOURS);
+        println!(
+            "Not due for a sync yet (target freshness: {}h).",
+            scheduler::FRESHNESS_TARGET_HOURS
+        );
         return Ok(());
     }
 
     let run_id = scheduler::next_run_id();
     println!("Starting pipeline run {run_id}");
 
-    let mut ctx = PipelineContext::new(PathBuf::from("./data"), run_id.clone());
+    let data_root = env::var_os("RUST_APTLANTIS_DATA_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("./data"));
+    let mut ctx = PipelineContext::new(data_root, run_id.clone());
+    ctx.ensure_layout()?;
+
     let mut report = BuildReport::new(run_id);
 
     for stage in stages::all_stages() {
@@ -44,5 +53,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     report.print_summary();
+    report.write_json(&ctx.build_report_path())?;
+    println!("Report written to {}", ctx.build_report_path().display());
     Ok(())
 }

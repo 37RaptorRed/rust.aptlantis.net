@@ -1,1 +1,4 @@
 /.idea/
+
+/pipeline/target/
+/pipeline/data/

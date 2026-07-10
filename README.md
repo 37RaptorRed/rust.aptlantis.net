@@ -9,9 +9,9 @@ rust.aptlantis.net is a static, self-hosted mirror of the crates.io registry (ev
 
 The mirror itself is raw material, not the product. The actual deliverables are the analytics, an immutable historical archive (timestamped, never-mutated snapshots), signed provenance records for each snapshot, torrent distributions, and periodic research-dataset releases for people studying the Rust ecosystem rather than just consuming crates.
 
-This repo currently holds the design proposal plus a pipeline skeleton (`pipeline/`) — the stage structure exists and runs end-to-end, but every stage is still a stub with no real logic. This project composes two existing sibling APTlantis components rather than reimplementing them: [`CloneCratesio`](#components) (the proven downloader, see Verified Result below) and [`ArchiveHasher`](#components) (hashing/signing for archival, governed by the `AAMHS` standard). The project's manifest also lives under a project-specific name, `rust.aptlantis.schema.toml`, in place of the usual `Aptlantis.manifest.toml`.
+This repo currently holds the design proposal plus the first runnable pipeline contract layer (`pipeline/`). The stage order exists, runs end-to-end, validates prior-stage artifacts, writes per-stage manifests, freezes a contract snapshot under `data/snapshots/<run_id>/`, moves `data/current.json`, and persists a JSON build report. The stages are still **contract-only**: CloneCratesio, ArchiveHasher, torrent creation, and Astro publishing are not invoked yet. This project composes two existing sibling APTlantis components rather than reimplementing them: [`CloneCratesio`](#components) (the proven downloader, see Verified Result below) and [`ArchiveHasher`](#components) (hashing/signing for archival, governed by the `AAMHS` standard). The project's manifest also lives under a project-specific name, `rust.aptlantis.schema.toml`, in place of the usual `Aptlantis.manifest.toml`.
 
-Quick links: [Architecture & full proposal](PROJECT.md)
+Quick links: [Architecture & full proposal](PROJECT.md) | [Mockup notes](docs/mockups/rust-aptlantis-ux-notes.md) | [Static mockup storyboard](docs/mockups/rust-aptlantis-storyboard.html)
 
 ---
 
@@ -39,7 +39,7 @@ Quick links: [Architecture & full proposal](PROJECT.md)
 | Component | CloneCratesio (`D:\CTS\CloneCratesio`) |
 | Result | CloneCratesio already meets the throughput and accuracy needed to hit a 12h freshness SLA with headroom |
 
-This is a prior result from the downloader component, not yet a result of this project's pipeline end-to-end (which doesn't exist yet). See [PROJECT.md](PROJECT.md) §2 and §12.
+This is a prior result from the downloader component, not yet a result of this project's contract-only pipeline end-to-end. See [PROJECT.md](PROJECT.md) §2 and §12.
 
 ---
 
@@ -78,6 +78,16 @@ Sibling project. Pulls the crates.io index and `.crate` files, capturing yanked 
 
 A staged workflow engine, not a script: Clone → Validate → Promote → Extract → Analyze → Snapshot → Hash → Package → Publish. Self-schedules the next run instead of relying on cron, and freezes an immutable snapshot on every completed run (see [PROJECT.md](PROJECT.md) §4).
 
+Current implementation status:
+
+- `cargo run` executes all nine stages in order.
+- Stages validate that the expected previous-stage artifact exists before continuing.
+- Each stage writes `data/runs/<run_id>/<stage>/artifact.json`.
+- Snapshot writes `data/snapshots/<run_id>/snapshot.json` and atomically replaces `data/current.json`.
+- Hash/Package/Publish create contract directories for integrity manifests, torrents/research datasets, and site output.
+- The runner writes `data/reports/<run_id>.json`.
+- `RUST_APTLANTIS_DATA_ROOT` can override the default `./data` output root.
+
 ### `ArchiveHasher` (existing, external — `D:\CTS\ArchiveHasher`)
 
 Sibling project. Hashes and signs each frozen snapshot for long-term archival, per the `AAMHS` standard (`D:\.library\aptlantis_core\AAMHS`).
@@ -101,10 +111,12 @@ Static, statistics-heavy front end built with Astro.
 | Artifact | Purpose |
 |----------|---------|
 | `crate.json` + `.crate` files | Raw mirror content — ground truth |
+| `data/runs/<run_id>/<stage>/artifact.json` | Contract artifact emitted by each pipeline stage; currently placeholder metadata, later the handoff point for real stage outputs |
 | Structured dataset | Query-ready versions/yank/dependency data |
 | Immutable snapshot (`snapshots/<timestamp>/`) | Frozen, reproducible point-in-time state of the whole mirror + dataset |
+| `current.json` | Mutable pointer naming the latest frozen snapshot; used instead of mutating snapshot content |
 | Hash/signature manifest | Long-term archival integrity record (ArchiveHasher, per AAMHS) |
-| Build report | Per-run audit trail; backs the site's Mirror Health page |
+| Build report (`data/reports/<run_id>.json`) | Per-run audit trail; backs the site's Mirror Health page |
 | `rust.aptlantis.schema.toml` | In place, replacing `Aptlantis.manifest.toml`; still mirrors the generic manifest fields, dataset-schema role TBD |
 | Torrent + magnet files | Distributable copies of a single immutable snapshot |
 | Research-dataset bundle | Periodic, self-contained researcher-facing release (metadata + dependency graph + yanked history + hashes + signatures + analytics + changelog + torrent) |
@@ -130,12 +142,12 @@ Not yet resolved — tracked in [PROJECT.md](PROJECT.md) §10:
 
 ## Release Posture
 
-rust.aptlantis.net is a design-only proposal with two existing, reusable sibling components (CloneCratesio and ArchiveHasher); nothing project-specific has been built yet.
+rust.aptlantis.net is still pre-integration, but it now has a runnable pipeline contract layer plus two existing, reusable sibling components (CloneCratesio and ArchiveHasher).
 
 | Field | Value |
 |-------|-------|
 | Stage | concept |
-| Completion | 5% (design drafted, no pipeline/site code yet) |
+| Completion | 10% (design drafted; pipeline contract layer runs and emits artifacts; no real clone/hash/site/package integration yet) |
 | Stability | experimental |
 | Technical debt | none (pre-implementation) |
 | Maintenance burden | unknown — TBD once pipeline exists |
@@ -146,11 +158,12 @@ rust.aptlantis.net is a design-only proposal with two existing, reusable sibling
 
 ## Roadmap
 
-- [x] Pipeline skeleton with explicit stages (Clone → Validate → Promote → Extract → Analyze → Snapshot → Hash → Package → Publish) and a scheduler driving Clone — see `pipeline/` (stub stages, no real logic yet)
+- [x] Pipeline skeleton with explicit stages (Clone → Validate → Promote → Extract → Analyze → Snapshot → Hash → Package → Publish) and a scheduler driving Clone — see `pipeline/`
+- [x] First contract layer: per-stage artifacts, JSON build reports, immutable contract snapshot directory, and `current.json`
 - [ ] Structured dataset schema + time-series storage
-- [ ] Immutable snapshot store + `current` pointer
+- [ ] Replace contract snapshot contents with real raw/dataset/analytics artifacts
 - [ ] Wire in ArchiveHasher invocation (per AAMHS) as the Hash stage
-- [ ] Build report schema, emitted by every stage
+- [ ] Expand build report schema with real counts, validation results, health scoring, and failure details
 - [ ] Decide the final structure of `rust.aptlantis.schema.toml` (already in place, but not yet schema-bearing)
 - [ ] Astro site: mirror browsing against a fixture dataset
 - [ ] Astro site: first analytics charts against real synced data

@@ -92,6 +92,8 @@ Not a single binary doing everything — a sequence of stages, each with a defin
 - **Recoverability**: because each stage only reads the prior stage's artifacts, a failure at Package doesn't require re-running Clone/Validate/Extract/Analyze — just re-run from Package forward against the already-frozen snapshot.
 - **Reporting**: every run — successful or not — emits a build report (§9).
 
+Current implementation note (2026-07-10): `pipeline/` now implements the first artifact contract layer. It does not call CloneCratesio, ArchiveHasher, Astro, or any torrent tooling yet, but each stage validates the previous stage's `artifact.json`, writes its own `artifact.json`, creates the expected output directories, freezes a contract snapshot, updates `current.json`, and persists a JSON build report.
+
 ### ArchiveHasher — `D:\CTS\ArchiveHasher` (existing, external)
 
 - Sibling project, not part of this repo. Performs the hashing and signing of a frozen snapshot for long-term archival, per the rules dictated by the AAMHS standard (`D:\.library\aptlantis_core\AAMHS`).
@@ -118,10 +120,11 @@ Not a single binary doing everything — a sequence of stages, each with a defin
 | Artifact | Produced by | Purpose |
 |---|---|---|
 | Raw `crate.json` + `.crate` files | Clone stage (CloneCratesio) | Ground truth mirror content, source for everything downstream |
+| Stage artifact (`data/runs/<run_id>/<stage>/artifact.json`) | Every current contract stage | Stable machine-readable handoff between stages; placeholder today, real stage output metadata later |
 | Structured dataset (versions, yank flags, dependency edges) | Extract stage | Query-ready representation of the mirror for the site and for torrent/dataset manifests |
 | Time-series + metric catalog | Analyze stage | Historical basis for the analytics in §7 |
 | Immutable snapshot (`snapshots/<timestamp>/`) | Snapshot stage | Frozen, reproducible point-in-time state of the whole mirror + dataset |
-| `current` pointer | Snapshot stage | Names the latest snapshot; the only mutable thing in the snapshot store |
+| `current.json` pointer | Snapshot stage | Names the latest snapshot; the only mutable thing in the snapshot store |
 | Hash/signature manifest | Hash stage (ArchiveHasher, per AAMHS) | Long-term archival integrity/provenance record; bundled into torrents and research datasets |
 | Build report / run manifest | Every stage (append-only) | Audit trail and the data source for the site's Mirror Health page (§9) |
 | Astro static build output | Publish stage | The deployed public site |
@@ -185,7 +188,7 @@ Torrent: generated | failed
 Status: healthy | degraded | failed
 ```
 
-Build reports are append-only and are the data source for an Astro "Latest Sync" / "Mirror Health" page, e.g.:
+The current contract implementation persists the first machine-readable form at `data/reports/<run_id>.json` with run id, start time, per-stage status, and per-stage duration in milliseconds. Later versions should add the counts and health rubric above. Build reports are append-only and are the data source for an Astro "Latest Sync" / "Mirror Health" page, e.g.:
 
 ```text
 Latest Sync — Completed in 2h 31m
@@ -211,9 +214,10 @@ These were explicitly flagged as undecided and should be resolved before impleme
 
 ## 11. Roadmap
 
-- [x] Stand up the pipeline skeleton with explicit stages (Clone → Validate → Promote → Extract → Analyze → Snapshot → Hash → Package → Publish) and a scheduler driving Clone. — `pipeline/` (Rust crate `rust-aptlantis-pipeline`); stages are stubs (no real logic yet), scheduler always says "run now." Builds and runs clean.
+- [x] Stand up the pipeline skeleton with explicit stages (Clone → Validate → Promote → Extract → Analyze → Snapshot → Hash → Package → Publish) and a scheduler driving Clone. — `pipeline/`; scheduler still always says "run now."
+- [x] Add the first artifact contract layer: per-stage `artifact.json`, contract snapshot directories, `current.json`, and persisted JSON build reports. Verified with `cargo check`, `cargo run`, and JSON parse validation on generated artifacts.
 - [ ] Define the structured dataset schema and time-series storage.
-- [ ] Implement the immutable snapshot store + `current` pointer (§4).
+- [ ] Replace the contract snapshot contents with real raw/dataset/analytics outputs and implement resume-from-stage behavior.
 - [ ] Wire in ArchiveHasher invocation (per AAMHS) as the Hash stage.
 - [ ] Define the build report schema and make every stage emit to it (§9).
 - [ ] Decide and implement the final structure of `rust.aptlantis.schema.toml` (already in place as the manifest, but not yet schema-bearing).

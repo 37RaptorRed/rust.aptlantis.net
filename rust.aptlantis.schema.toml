@@ -31,7 +31,7 @@ state = "concept"
 created = "2026-06-10"
 last_updated = "2026-07-09"
 maintainer = "Herb"
-completion_percent = 8
+completion_percent = 10
 
 [paths]
 root = "D:\\WDS\\DotNet"
@@ -67,7 +67,7 @@ external_dependencies = ["crates.io index (git)", "static.crates.io (CDN)"]
 stability = "experimental"
 active_development = true
 known_gaps = [
-  "Pipeline skeleton exists (pipeline/, crate rust-aptlantis-pipeline) with all 9 stages stubbed and wired in order, builds and runs clean -- but no stage has real logic yet. CloneCratesio and ArchiveHasher are proven/existing externally but not yet invoked from any stage.",
+  "Pipeline contract layer exists (pipeline/) with all 9 stages wired in order. It validates previous-stage artifact presence, writes per-stage artifact.json files, creates contract output directories, freezes data/snapshots/<run_id>/, updates data/current.json, and persists data/reports/<run_id>.json. CloneCratesio and ArchiveHasher are proven/existing externally but not yet invoked from any stage.",
   "Torrent distribution granularity not decided; whether RustSec-style vulnerability data is wanted alongside ArchiveHasher's integrity manifest not decided (see PROJECT.md §10).",
   "Torrent seeding/hosting strategy not decided.",
   "Storage backend for the raw mirror at 2.5M-record scale not decided.",
@@ -82,4 +82,4 @@ technical_debt = "none (pre-implementation)"
 read_first = ["rust.aptlantis.schema.toml", "README.md", "PROJECT.md"]
 governing_context = "Read the AAMHS standard (D:\\.library\\aptlantis_core\\AAMHS) before touching archival hashing/signing behavior; read the PPS standard before broad changes."
 safe_to_modify = false
-notes = "This file replaces the usual Aptlantis.manifest.toml for this project (renamed 2026-07-09). Design proposal complete as of 2026-07-09 (see PROJECT.md). A pipeline skeleton exists under pipeline/ (stub stages only, no real logic) — do not assume any stage actually clones, hashes, or publishes yet."
+notes = "This file replaces the usual Aptlantis.manifest.toml for this project (renamed 2026-07-09). Design proposal complete as of 2026-07-09 (see PROJECT.md). A contract-only pipeline exists under pipeline/ and emits stage artifacts, contract snapshots, current.json, and build reports — do not assume any stage actually clones, hashes, packages, or publishes yet."
