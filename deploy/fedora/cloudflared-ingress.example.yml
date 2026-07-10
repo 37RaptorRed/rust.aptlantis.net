@@ -1,0 +1,15 @@
+tunnel: 693422ea-bfa2-44fd-b7ca-ac96e5aed100
+
+ingress:
+  - hostname: aptlantis.net
+    service: http://localhost:8080
+  - hostname: www.aptlantis.net
+    service: http://localhost:8080
+  - hostname: aptlantis.studio
+    service: http://localhost:8181
+  - hostname: www.aptlantis.studio
+    service: http://localhost:8181
+  # Add after the public hostname is ready:
+  # - hostname: rust.aptlantis.net
+  #   service: http://localhost:8282
+  - service: http_status:404

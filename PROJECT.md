@@ -115,6 +115,22 @@ Current implementation note (2026-07-10): `pipeline/` now implements the first a
 - Every torrent maps to exactly one immutable snapshot and is never re-published mutated.
 - Granularity of the smaller breakdowns is still open — see §10.
 
+### Fedora deployment scaffold
+
+The target deployment environment is a Dell Fedora home server reachable as `herb@192.168.0.80`, with Docker running Caddy, cloudflared, scheduled jobs, and any Rust service/job images this project needs. The repo now includes `deploy/fedora/`:
+
+| File | Role |
+|---|---|
+| `compose.yaml` | Localhost-bound Caddy, cloudflared, and an intentional `jobs` profile for the Rust pipeline |
+| `Caddyfile` | Serves `/home/herb/aptlantis.net`, `/home/herb/aptlantis.studio`, and reserved `/home/herb/rust.aptlantis/site` |
+| `.env.example` | Placeholder for `CLOUDFLARE_TUNNEL_TOKEN`; no token is committed |
+| `cloudflared-ingress.example.yml` | Documents the existing Cloudflare tunnel routes and the reserved rust route |
+| `pipeline/Dockerfile` | Builds the current Rust pipeline binary into a small job image |
+
+Current public Cloudflare routes are `aptlantis.net` and `www.aptlantis.net` to `http://localhost:8080`, plus `aptlantis.studio` and `www.aptlantis.studio` to `http://localhost:8181`. `rust.aptlantis.net` is reserved locally at `http://localhost:8282` but not yet listed as a live Cloudflare route.
+
+The Windows-local mirror resources live under `A:\rust-lang`; the Compose file models their eventual Fedora-side mount as `/mnt/rust-lang`. The exact transfer method from Windows to Fedora remains a design item.
+
 ## 6. Data model
 
 | Artifact | Produced by | Purpose |
@@ -131,6 +147,7 @@ Current implementation note (2026-07-10): `pipeline/` now implements the first a
 | `rust.aptlantis.schema.toml` | In place (replaces `Aptlantis.manifest.toml`) | Project manifest for this repo; currently mirrors the generic APTlantis manifest fields under a project-specific filename — whether it should also define the crate dataset schema is still open (see §10) |
 | Torrent + magnet files | Package stage | Distributable copies of a single immutable snapshot and its subsets |
 | Research-dataset bundle | Package stage | Periodic, self-contained researcher-facing release (§8) |
+| Fedora deployment scaffold (`deploy/fedora/`) | Operator/deploy setup | Docker, Caddy, cloudflared, and pipeline job image configuration for the home server |
 
 ## 7. Analytics catalog
 
@@ -207,6 +224,7 @@ These were explicitly flagged as undecided and should be resolved before impleme
 - **Security information source**: ArchiveHasher's hash/signature manifest (per AAMHS) covers integrity/provenance; still unconfirmed whether vulnerability-advisory data (e.g. RustSec) should also be bundled.
 - **Seeding/hosting for torrents**: who/what seeds them long-term (self-hosted tracker vs. public trackers vs. WebSeed only).
 - **Storage backend** for the raw mirror at 2.5M-record scale (plain filesystem vs. object storage) — affects Clone, Snapshot, and Package stage design, and snapshot storage cost over time.
+- **Windows-to-Fedora mirror transfer**: `A:\rust-lang` is the current Windows-local source. The Fedora-side mount/transfer path is represented as `/mnt/rust-lang`, but the actual mechanism is not decided yet.
 - **Snapshot retention**: how long immutable snapshots are kept before pruning/cold-archiving, and whether pruning ever applies to research-dataset releases (probably not, given they're meant to be citable).
 - **Research-dataset cadence and exact bundle contents**: monthly vs. quarterly vs. milestone-driven; final field list per bundle.
 - **Mirror Health scoring**: what "98/100" is actually computed from — needs a defined rubric, not just a vibe number.
@@ -225,7 +243,9 @@ These were explicitly flagged as undecided and should be resolved before impleme
 - [ ] Astro site: first analytics charts (growth, yanked-vs-new) against real synced data.
 - [ ] Astro site: "Latest Sync" / Mirror Health page against real build reports.
 - [ ] Resolve remaining open questions in §10, then design the torrent packager and research-dataset bundle format.
-- [ ] Containerize (Docker) and confirm end-to-end sync fits the 12h freshness SLA in practice.
+- [x] Add initial Fedora Docker/Caddy/cloudflared deployment scaffold.
+- [ ] Define and test the Windows-to-Fedora transfer/mount path for `A:\rust-lang`.
+- [ ] Containerize the real integrations and confirm end-to-end sync fits the 12h freshness SLA in practice.
 
 ## 12. Freshness & accuracy commitments
 

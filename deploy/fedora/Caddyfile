@@ -1,0 +1,37 @@
+{
+	auto_https off
+}
+
+:8080 {
+	root * /srv/aptlantis.net
+	file_server
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}
+
+:8181 {
+	root * /srv/aptlantis.studio
+	file_server
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}
+
+# Reserve a local service for rust.aptlantis.net before a Cloudflare route is added.
+:8282 {
+	root * /srv/rust.aptlantis/site
+	file_server
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}

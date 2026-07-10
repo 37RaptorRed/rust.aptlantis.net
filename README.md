@@ -11,7 +11,7 @@ The mirror itself is raw material, not the product. The actual deliverables are 
 
 This repo currently holds the design proposal plus the first runnable pipeline contract layer (`pipeline/`). The stage order exists, runs end-to-end, validates prior-stage artifacts, writes per-stage manifests, freezes a contract snapshot under `data/snapshots/<run_id>/`, moves `data/current.json`, and persists a JSON build report. The stages are still **contract-only**: CloneCratesio, ArchiveHasher, torrent creation, and Astro publishing are not invoked yet. This project composes two existing sibling APTlantis components rather than reimplementing them: [`CloneCratesio`](#components) (the proven downloader, see Verified Result below) and [`ArchiveHasher`](#components) (hashing/signing for archival, governed by the `AAMHS` standard). The project's manifest also lives under a project-specific name, `rust.aptlantis.schema.toml`, in place of the usual `Aptlantis.manifest.toml`.
 
-Quick links: [Architecture & full proposal](PROJECT.md) | [Mockup notes](docs/mockups/rust-aptlantis-ux-notes.md) | [Static mockup storyboard](docs/mockups/rust-aptlantis-storyboard.html)
+Quick links: [Architecture & full proposal](PROJECT.md) | [Fedora server context](docs/fedora-server-context.md) | [Mockup notes](docs/mockups/rust-aptlantis-ux-notes.md) | [Static mockup storyboard](docs/mockups/rust-aptlantis-storyboard.html)
 
 ---
 
@@ -26,6 +26,7 @@ Quick links: [Architecture & full proposal](PROJECT.md) | [Mockup notes](docs/mo
 | Analytics site | Astro static site: mirror browsing, a growing metric catalog (growth, yanked history, maintainer activity, dormancy/revival, etc.), and a Mirror Health status page |
 | Distribution | Per-snapshot torrents plus periodic, self-contained research-dataset releases |
 | Audit trail | A build report per run (counts, validation, statuses) backs both the audit log and the site's health page |
+| Server deployment | Fedora Dell home server, Docker, Caddy, and Cloudflare Tunnel (`aptlantis-fedora`) scaffolded under `deploy/fedora/` |
 
 ---
 
@@ -104,6 +105,15 @@ Static, statistics-heavy front end built with Astro.
 - Mirror Health: a "Latest Sync" status page driven by each run's build report
 - Rebuilt from the pipeline's dataset each sync cycle — no live backend
 
+### `Fedora Deployment` (new scaffold)
+
+The first server scaffold lives in `deploy/fedora/` and is based on the Dell Fedora home server context in [docs/fedora-server-context.md](docs/fedora-server-context.md).
+
+- Caddy serves `aptlantis.net` on localhost `:8080`, `aptlantis.studio` on `:8181`, and reserves `rust.aptlantis.net` on `:8282`.
+- `cloudflared` is wired for the existing `aptlantis-fedora` tunnel via `CLOUDFLARE_TUNNEL_TOKEN`.
+- The Rust pipeline has a Docker image and a Compose `jobs` profile, so it can be run intentionally rather than as an always-on web service.
+- Windows mirror resources under `A:\rust-lang` are documented as the current source of truth; the exact transfer/mount path to Fedora is still open and represented as `/mnt/rust-lang` in Compose.
+
 ---
 
 ## Data, Storage, or Artifact Model
@@ -120,6 +130,7 @@ Static, statistics-heavy front end built with Astro.
 | `rust.aptlantis.schema.toml` | In place, replacing `Aptlantis.manifest.toml`; still mirrors the generic manifest fields, dataset-schema role TBD |
 | Torrent + magnet files | Distributable copies of a single immutable snapshot |
 | Research-dataset bundle | Periodic, self-contained researcher-facing release (metadata + dependency graph + yanked history + hashes + signatures + analytics + changelog + torrent) |
+| `deploy/fedora/` | Docker Compose, Caddy, cloudflared template, and pipeline container scaffold for the Fedora server |
 
 Full data model: [PROJECT.md](PROJECT.md) §6.
 
@@ -133,6 +144,7 @@ Not yet resolved — tracked in [PROJECT.md](PROJECT.md) §10:
 - Whether vulnerability-advisory data (e.g. RustSec) is wanted alongside ArchiveHasher's integrity manifest
 - Torrent seeding/hosting strategy
 - Storage backend for the raw mirror at 2.5M-record scale
+- Windows `A:\rust-lang` to Fedora `/mnt/rust-lang` transfer/mount strategy
 - Snapshot retention/pruning policy (and whether research-dataset releases are ever pruned)
 - Research-dataset cadence and exact bundle contents
 - What the Mirror Health score is actually computed from
@@ -169,6 +181,8 @@ rust.aptlantis.net is still pre-integration, but it now has a runnable pipeline 
 - [ ] Astro site: first analytics charts against real synced data
 - [ ] Astro site: Latest Sync / Mirror Health page against real build reports
 - [ ] Resolve remaining open questions above, then design the torrent packager and research-dataset bundle format
+- [x] Add initial Fedora Docker/Caddy/cloudflared deployment scaffold
+- [ ] Define Windows-to-Fedora mirror sync path for `A:\rust-lang`
 - [ ] Containerize and confirm end-to-end sync fits the 12h SLA in practice
 
 ---

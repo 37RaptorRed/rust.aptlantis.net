@@ -1,0 +1,44 @@
+name: aptlantis-fedora
+
+services:
+  caddy:
+    image: caddy:2
+    container_name: aptlantis-caddy
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8181:8181"
+      - "127.0.0.1:8282:8282"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /home/herb/aptlantis.net:/srv/aptlantis.net:ro
+      - /home/herb/aptlantis.studio:/srv/aptlantis.studio:ro
+      - /home/herb/rust.aptlantis:/srv/rust.aptlantis:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: aptlantis-cloudflared
+    restart: unless-stopped
+    depends_on:
+      - caddy
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+
+  rust-pipeline:
+    build:
+      context: ../../pipeline
+      dockerfile: Dockerfile
+    image: rust-aptlantis-pipeline:local
+    container_name: rust-aptlantis-pipeline
+    profiles:
+      - jobs
+    environment:
+      RUST_APTLANTIS_DATA_ROOT: /srv/rust.aptlantis/data
+    volumes:
+      - /home/herb/rust.aptlantis:/srv/rust.aptlantis
+      - /mnt/rust-lang:/mnt/rust-lang:ro
+
+volumes:
+  caddy_data:
+  caddy_config:

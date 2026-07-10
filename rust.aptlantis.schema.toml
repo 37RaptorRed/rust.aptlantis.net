@@ -3,7 +3,7 @@ schema = "APTlantis Entity Manifest"
 schema_version = "2.4"
 manifest_type = "project"
 canonical_name = "rust.aptlantis.schema.toml"
-last_updated = "2026-07-09"
+last_updated = "2026-07-10"
 maintainer = "Herb"
 
 [entity]
@@ -29,7 +29,7 @@ proposal_required = true
 [lifecycle]
 state = "concept"
 created = "2026-06-10"
-last_updated = "2026-07-09"
+last_updated = "2026-07-10"
 maintainer = "Herb"
 completion_percent = 10
 
@@ -38,7 +38,7 @@ root = "D:\\WDS\\DotNet"
 docs = "docs"
 source = "pipeline"
 artifacts = ""
-data = ""
+data = "pipeline/data"
 
 [documentation]
 readme = "README.md"
@@ -52,7 +52,7 @@ platform = "docker"
 language_primary = "rust"
 languages_used = ["rust", "go", "typescript"]
 services = ["clonecratesio", "rust-pipeline", "archivehasher", "astro-site", "torrent-packager"]
-storage = ["local-filesystem"]
+storage = ["local-filesystem", "fedora-home-server", "windows-local-mirror"]
 
 [relationships]
 depends_on_projects = [
@@ -75,6 +75,7 @@ known_gaps = [
   "Research-dataset release cadence and exact bundle contents not decided (see PROJECT.md §8).",
   "Mirror Health scoring rubric not decided (see PROJECT.md §9).",
   "This file itself (rust.aptlantis.schema.toml) currently just mirrors the generic Aptlantis manifest fields under a project-specific name; whether it should also define the crate dataset schema is still undecided.",
+  "Fedora deployment scaffold exists under deploy/fedora for Caddy, cloudflared, and the pipeline job image. It has not been deployed or validated on the server yet, and the Windows A:\\rust-lang to Fedora /mnt/rust-lang transfer path is not decided.",
 ]
 technical_debt = "none (pre-implementation)"
 
